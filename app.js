@@ -5,7 +5,7 @@ const fs = require('fs')
 const yamoney_http = require('./yamoney-http-notifications.js')
 const https = require('https');
 
-app.post('/yamoney', yamoney_http('YOUR_SECRET', function(err, body) {
+app.post('/yamoney', yamoney_http('SS91gZAFCStcbbQNmyjMWY3u', function(err, body) {
     console.log(body); // here will be body of the notification
 }));
 
