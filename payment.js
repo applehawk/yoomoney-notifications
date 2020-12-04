@@ -7,7 +7,7 @@ const MongoClient = require("mongodb").MongoClient;
 const assert = require('assert');
 
 const url = "mongodb+srv://"+mongouser+":"+mongopass+"@"+mongourl+"/?retryWrites=true&w=majority"
-//here we handle ya-money p2p-incoming
+//Here we handle ya-money p2p-incoming transactions
 //https://yoomoney.ru/docs/wallet/using-api/notification-p2p-incoming
 const mongoClient = new MongoClient(url,
     { useNewUrlParser: true, useUnifiedTopology: true });
