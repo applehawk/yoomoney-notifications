@@ -1,37 +1,14 @@
-const mongouser = process.env.MONGO_USER
-const mongopass = process.env.MONGO_PASS
-const mongourl = process.env.MONGO_URL
-//MONGO_URL="mongodb+srv://payment-script:XBnz0KVcr6kMx15Z@mlpayment-demo.mfbib.mongodb.net/?retryWrites=true&w=majority"
-
-const MongoClient = require("mongodb").MongoClient;
-const assert = require('assert');
-
-const url = "mongodb+srv://"+mongouser+":"+mongopass+"@"+mongourl+"/?retryWrites=true&w=majority"
 //Here we handle ya-money p2p-incoming transactions
 //https://yoomoney.ru/docs/wallet/using-api/notification-p2p-incoming
-const mongoClient = new MongoClient(url,
-    { useNewUrlParser: true, useUnifiedTopology: true });
-const dbName = 'usersdb'
+const db = require('./db.js')
+const constants = require('./constants.js')
 
-const processTransaction = (transaction) => {
-    console.log(url)
-    mongoClient.connect((err, client )=>{
-        assert.equal(null, err);
-        console.log('Connected successfully to server');
-        const db = client.db(dbName);
-        const collection = db.collection("payments");
-        collection.insertOne(transaction, function(err, result){
-            if(err){
-                return console.log(err);
-            }
-            console.log(result.ops);
-            client.close();
-        });
-    });
+const processIncomeTransaction = (transaction) => {
+    db.insertTransaction(transaction)
 }
 
 module.exports = function(body) {
-    let transaction = {
+    let incoming_transaction = {
         notification_type: body.notification_type, //notification_type: 'p2p-incoming',
         bill_id: body.bill_id, //bill_id: '',
         amount: body.amount, //amount: '404.27',
@@ -56,5 +33,5 @@ module.exports = function(body) {
         flat: body.flat,
         zip: body.zip
     };
-    return processTransaction(transaction)
+    return processIncomeTransaction(incoming_transaction)
 }
