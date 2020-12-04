@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+const yooMoneySecure = process.env.YOOMONEY_SECURE
 const fs = require('fs')
 const https = require('https')
 const express = require('express')
@@ -15,7 +16,7 @@ const payment = require('./payment')
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.post('/yamoney', yamoney_http('9c7v1ZlWYLQEmS3jtGyyTksy', function(err, body) {
+app.post('/yamoney', yamoney_http(yooMoneySecure, function(err, body) {
     if (body.test_notification === 'true' || body.operation_id === 'test-notification') {
         console.log("This is test notification")
         payment(body);
