@@ -11,6 +11,7 @@ const port = 3000
 
 const yamoney_http = require('./yamoney-http-notifications')
 const processIncomeTransaction = require('./incoming-transaction')
+const requestYooPayment = require('./request-yoopayment')
 
 //Here we are configuring express to use body-parser as middle-ware.
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -28,6 +29,27 @@ app.post('/yamoney', yamoney_http(yooMoneySecure, function(err, body) {
     console.log(body); // here will be body of the notification
 
 }));
+
+app.get('')
+
+app.get('/request', (req, res) => {
+    url = requestYooPayment.formRequestYoo('4100116146429872',
+        'Оплата за подписку HeightEstimator',
+        '249',
+        '123561123',
+        'demo-height',
+        'subscription.one.month',
+        '/success')
+
+    /*('4100116146429872', 2,
+        'money.yandex.ru',
+        '',
+        'Оплата за подписку на HeightEstimator', '', //target important!
+        'Оплата за подписку на HeightEstimator 123',
+        'Оплата за подписку на HeightEstimator'
+        )*/
+    console.log(url.href)
+})
 
 app.listen(port, () => {
 
