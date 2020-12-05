@@ -10,49 +10,89 @@ const app = express()
 const port = 3000
 
 const yamoney_http = require('./yamoney-http-notifications')
-const processIncomeTransaction = require('./incoming-transaction')
-const requestYooPayment = require('./request-yoopayment')
+const incomingTransactions = require('./incoming-yootransaction')
+const yooPayment = require('./request-yoopayment')
+var RequestPayment = require('./request-payment')
 
 //Here we are configuring express to use body-parser as middle-ware.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post('/yamoney', yamoney_http(yooMoneySecure, function(err, body) {
+    console.log(body)
     if (body.test_notification === 'true' || body.operation_id === 'test-notification') {
         console.log("This is test notification")
-        processIncomeTransaction(body);
     } else {
         console.log("This is real payment")
-        processIncomeTransaction(body);
+        let paymentId = yooPayment.parsePaymentId(body.label)
+        RequestPayment.requestPaymentWithPaymentId(paymentId).then( (requestPayment) => {
+            let transactionId = requestPayment.transactionId
+            incomingTransactions.processIncomeTransaction(body, transactionId);
+        })
     }
-
     console.log(body); // here will be body of the notification
 
 }));
 
-app.get('')
+app.get('/payment/success', (req,res) => {
+    // Retrieve the tag from our URL path
+    var paymentIdStr = req.query.paymentId
+    //check on regex
+    var matchResult = paymentIdStr.match(/[a-zA-Z0-9]{6,}/)
+    if (matchResult === null || matchResult === undefined) {
+        res.status(200).send('This is failed paymentId')
+        res.close()
+        return
+    }
+    let paymentId = matchResult[0]
+    console.log(`Found PaymentID: ${paymentId}`)
+
+    var requestPayment = null
+    var transactionPayment = null
+    RequestPayment.requestPaymentWithPaymentId(paymentId).then( (requestPaymentWithId) => {
+        console.log(requestPayment)
+        requestPayment = requestPaymentWithId
+        let requestPaymentStr = requestPayment.toString()
+        console.log(`Found request-payment: ${requestPaymentStr}`)
+        let transactionId = requestPaymentWithId.transactionId
+        return incomingTransactions.transactionWithTransactionId(transactionId)
+    }).then( (transactionPaymentWithId) => {
+        transactionPayment = transactionPaymentWithId
+        console.log(`transactionPayment: ${transactionPayment}`)
+        return new Promise((resolve, reject) => {
+            if (transactionPayment.transactionId === requestPayment.transactionId) {
+                resolve(transactionPayment)
+            } else {
+                reject('This is failed transaction');
+            }
+        });
+    }).then( (transactionPayment) => {
+        let transactionPaymentStr = transactionPayment.toString()
+        res.status(200).send(`Found transaction-payment: ${transactionPaymentStr}`)
+    }).catch( (error) => {
+        res.status(200).send('This is failed paymentId')
+        console.log(error)
+    })
+})
 
 app.get('/request', (req, res) => {
-    url = requestYooPayment.formRequestYoo('4100116146429872',
+    var payment = new RequestPayment.RequestPayment('4100116146429872',
         'Оплата за подписку HeightEstimator',
-        '249',
-        '123561123',
+        '2',
         'demo-height',
         'subscription.one.month',
-        '/success')
+        new URL('/payment/success', `https://${req.hostname}/`));
 
-    /*('4100116146429872', 2,
-        'money.yandex.ru',
-        '',
-        'Оплата за подписку на HeightEstimator', '', //target important!
-        'Оплата за подписку на HeightEstimator 123',
-        'Оплата за подписку на HeightEstimator'
-        )*/
+    let amount_due = yooPayment.amountDueAfterCommission(payment.amount, 'AC')
+    payment.storePayment(amount_due)
+    let url = yooPayment.urlRequestPayment(payment)
+
     console.log(url.href)
+    res.status(200).send(`
+        <a href="${url.href}">${url.href}</a>
+    `)
 })
 
 app.listen(port, () => {
-
   console.log(`Example app listening at http://localhost:${port}`)
-
 });

@@ -2,14 +2,14 @@ const constants = require('./constants.js')
 const MongoClient = require("mongodb").MongoClient
 const assert = require('assert')
 
-function insertTransaction(object){
+function insertTransaction(object, collectionName){
     this.clientAccess = null
     this.database = null
     open()
         .then((client)=>{
             this.clientAccess = client
             this.database = client.db(constants.MONGODB_NAME)
-            return this.database.collection('incoming-transactions')
+            return this.database.collection(collectionName)
         })
         .then((transactions_collection)=>{
             console.log('Write transaction...')
